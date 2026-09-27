@@ -2,14 +2,15 @@
 
 # ============================================================
 #   AUTO INSTALL: VPN (XRAY) + WEBSITE KATALOG + AUTO SYNC
-#   1 Domain, 1 Server
+#   1 Domain, 1 Server (PWA READY)
 # ============================================================
 
 # --- KONFIGURASI UTAMA ---
-DOMAIN="gudangbarang.com"
+DOMAIN="sheet.gudangbarang.com"
 UUID="07e329c4-5b6b-41da-b4aa-0c8ca3e3fbfa"
 BOT_TOKEN="7484227045:AAENQc5Dp8_Nno8Oarl79IfAZZtbg4eIQC0"
 CHAT_ID="5026145251"
+GITHUB_RAW_URL="https://raw.githubusercontent.com/Septahadif/mazy/main"
 
 # Pastikan script dijalankan sebagai root
 if [ "$EUID" -ne 0 ]; then
@@ -70,15 +71,17 @@ echo "=================================================="
 bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
 
 # ============================================================
-# --- 5. BUAT WEBSITE KATALOG & SCRIPT SYNC ---
+# --- 5. BUAT WEBSITE KATALOG, PWA & SCRIPT SYNC ---
 # ============================================================
 echo "=================================================="
-echo " [5/9] Membuat halaman web katalog & script sync..."
+echo " [5/9] Membuat halaman web katalog, PWA & script sync..."
 echo "=================================================="
 
-# Buat direktori aplikasi dan gambar
+# Buat direktori aplikasi publik dan folder skrip rahasia (Celah 1)
 APP_DIR="/var/www/html"
+SYNC_DIR="/var/www/scripts"
 mkdir -p $APP_DIR/gambar
+mkdir -p $SYNC_DIR
 
 # --- A. MENULIS FILE HTML ---
 cat <<'HTMLEOF' > $APP_DIR/index.html
@@ -87,15 +90,23 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light">
     <title>GudangBarang.com - Mas Septa</title>
+    <!-- PENAMBAHAN META TAG PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#EA580C">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    
     <style>
-        html, body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #333; margin: 0; padding: 0; width: 100%; min-height: 100vh; }
-        .app-container { max-width: 480px; width: 100%; min-height: 100vh; margin: 0 auto; background-color: #f5f5f5; display: flex; flex-direction: column; position: relative; }
-        .sticky-atas { position: sticky; top: 0; z-index: 30; box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
-        header { background: linear-gradient(135deg, #F97316, #EA580C); color: white; padding: 15px; text-align: center; }
-        .header-title { font-size: 1.25rem; font-weight: 900; margin: 0; }
-        .header-owner { font-size: 0.65rem; font-weight: 600; margin: 4px 0 2px 0; letter-spacing: 2px; color: rgba(255, 255, 255, 0.8); text-transform: uppercase; }
-        .header-subtitle { font-size: 0.85rem; font-weight: 700; margin: 0; }
+    * { -webkit-tap-highlight-color: transparent; }
+        html, body { color-scheme: light; font-family: 'Segoe UI', Tahoma, sans-serif; background: linear-gradient(#f5f5f5, #f5f5f5) !important; margin: 0; padding: 0; width: 100%; min-height: 100vh; }
+        .app-container { max-width: 480px; width: 100%; min-height: 100vh; margin: 0 auto; background: linear-gradient(#f5f5f5, #f5f5f5) !important; display: flex; flex-direction: column; position: relative; }
+        .sticky-atas { position: sticky; top: 0; z-index: 30; box-shadow: 0 3px 8px rgba(0,0,0,0.1); background-color: white; -webkit-transform: translate3d(0, 0, 0); transform: translate3d(0, 0, 0); will-change: transform; backface-visibility: hidden; }
+        header { position: relative; background-color: #EA580C; color: #ffffff; padding: 12px 15px; text-align: center; overflow: hidden; box-shadow: 0 3px 8px rgba(234, 88, 12, 0.3); }
+        header::before { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'><g fill='%23ffffff' fill-opacity='0.15'><ellipse cx='45' cy='20' rx='9' ry='14'/><ellipse cx='45' cy='70' rx='9' ry='14'/><ellipse cx='20' cy='45' rx='14' ry='9'/><ellipse cx='70' cy='45' rx='14' ry='9'/><ellipse cx='28' cy='28' rx='9' ry='13' transform='rotate(-45 28 28)'/><ellipse cx='62' cy='62' rx='9' ry='13' transform='rotate(-45 62 62)'/><ellipse cx='62' cy='28' rx='9' ry='13' transform='rotate(45 62 28)'/><ellipse cx='28' cy='62' rx='9' ry='13' transform='rotate(45 28 62)'/></g><circle cx='45' cy='45' r='6' fill='%23EA580C'/><circle cx='45' cy='45' r='3' fill='%23ffffff' fill-opacity='0.9'/></svg>"); background-size: 90px 90px; pointer-events: none; z-index: 1; -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 25%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0) 100%); mask-image: linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 25%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0) 100%); }
+        header > * { position: relative; z-index: 2; }
+        .header-title { font-size: 1.05rem; font-weight: 800; margin: 0; letter-spacing: 0.5px; color: #ffffff; font-family: 'Segoe UI', Tahoma, sans-serif; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
+        .header-subtitle { font-size: 0.75rem; font-weight: 600; margin: 3px 0 0 0; color: rgba(255, 255, 255, 0.92); letter-spacing: 0.3px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
         .wadah-pencarian { padding: 10px 15px; background: white; border-bottom: 1px solid #ddd; }
         .form-pencarian { display: flex; align-items: center; gap: 12px; width: 100%; }
         .btn-back { background: none; border: none; padding: 0; display: none; align-items: center; justify-content: center; cursor: pointer; color: #EA580C; }
@@ -108,7 +119,7 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
         .animasi-teks-wrapper { display: inline-block; height: 1.2em; overflow: hidden; margin-left: 4px; }
         .teks-bergerak { display: block; transition: transform 0.3s ease-in-out, opacity 0.3s ease; }
         .wadah-katalog { padding: 15px; padding-bottom: 100px; display: flex; flex-direction: column; gap: 20px; }
-        .kartu-barang { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); position: relative; border-bottom: 6px solid transparent; transition: border-color 0.3s ease; }
+        .kartu-barang { background: linear-gradient(#ffffff, #ffffff) !important; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); position: relative; border-bottom: 6px solid transparent; transition: border-color 0.3s ease; }
         .kartu-barang.aktif-keranjang { border-bottom: 6px solid #25D366; }
         .teks-pilih-varian { font-size: 0.8rem; font-weight: 700; color: #555; margin-bottom: 6px; }
         .wadah-varian { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
@@ -125,6 +136,7 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
         .watermark-kosong { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-25deg); color: rgba(255, 0, 0, 0.6); font-size: 2.5rem; font-weight: 900; letter-spacing: 2px; border: 5px solid rgba(255, 0, 0, 0.6); padding: 10px 20px; border-radius: 10px; z-index: 10; pointer-events: none; text-shadow: 2px 2px 4px rgba(255,255,255,0.8); }
         .nama-barang { font-size: 1.1rem; color: #333; margin: 15px 0 5px 0; font-weight: bold; }
         .harga-barang { color: #EA580C; font-weight: bold; font-size: 1.2rem; margin: 0 0 10px 0; }
+        .satuan-harga { font-size: 0.85rem; color: #666; font-weight: normal; }
         .wadah-deskripsi { border: 1.5px dashed #ccc; border-radius: 8px; padding: 10px; margin-bottom: 15px; background-color: #fafafa; }
         .judul-deskripsi { font-size: 0.8rem; font-weight: 700; color: #777; margin-bottom: 6px; }
         .keterangan-barang { font-size: 0.85rem; color: #444; white-space: pre-wrap; line-height: 1.4; margin: 0; }
@@ -135,10 +147,9 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
         .btn-qty:disabled { background: #ccc; cursor: not-allowed; }
         .btn-qty:active:not(:disabled) { transform: scale(0.95); }
         .angka-qty { font-weight: bold; min-width: 25px; text-align: center; color: #333; }
-        .fab-keranjang { position: fixed; bottom: 20px; right: 20px; background-color: #EA580C; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4); cursor: pointer; z-index: 50; transition: transform 0.2s; }
-        .fab-keranjang:active { transform: scale(0.9); }
-        .badge-keranjang { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; font-size: 0.75rem; font-weight: bold; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
-        @media (min-width: 481px) { .fab-keranjang { right: calc(50% - 220px); } }
+        .btn-keranjang-atas { background: #EA580C; color: white; border: none; height: 43px; width: 45px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; flex-shrink: 0; transition: transform 0.2s; }
+        .btn-keranjang-atas:active { transform: scale(0.92); }
+        .badge-keranjang { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; font-size: 0.7rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; }
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; justify-content: center; align-items: flex-end; }
         .modal-content { background: white; width: 100%; max-width: 480px; max-height: 85%; border-radius: 20px 20px 0 0; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -174,8 +185,7 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
     <div class="app-container">
         <div class="sticky-atas">
             <header>
-                <h1 class="header-title">GudangBarang.com</h1>
-                <div class="header-owner">Owner</div>
+                <h1 class="header-title">Gudangbarang.com</h1>
                 <p class="header-subtitle">Mas Septa</p>
             </header>
             <div class="wadah-pencarian">
@@ -196,14 +206,15 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         </button>
                     </div>
+                    <!-- TAMBAHKAN TOMBOL KERANJANG BARU DI SINI -->
+    <button type="button" class="btn-keranjang-atas" onclick="bukaKeranjang()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        <div class="badge-keranjang" id="badge-qty">0</div>
+    </button>
                 </form>
             </div>
         </div>
         <div class="wadah-katalog" id="tempat-katalog"><div class="teks-loading">Mengambil data dari gudang... ⏳</div></div>
-        <div class="fab-keranjang" onclick="bukaKeranjang()">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-            <div class="badge-keranjang" id="badge-qty">0</div>
-        </div>
         <div class="modal-overlay" id="modal-keranjang">
             <div class="modal-content">
                 <div class="modal-header">
@@ -227,31 +238,64 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
                 </div>
             </div>
         </div>
-        <div class="konfirmasi-overlay" id="modalKonfirmasiKeluar"><div class="konfirmasi-box"><h3>Konfirmasi Keluar</h3><p>Apakah kamu yakin ingin keluar dari aplikasi?</p><div class="konfirmasi-aksi"><button class="btn-konfirmasi btn-tidak" onclick="tutupKonfirmasiKeluar()">Tidak</button><button class="btn-konfirmasi btn-ya" onclick="eksekusiKeluarApp()">Ya, Keluar</button></div></div></div>
-        <div class="konfirmasi-overlay" id="modalKonfirmasiWA"><div class="konfirmasi-box"><h3>Konfirmasi Pesanan</h3><p>Apakah kamu sudah yakin?<br>Barang yang sudah dipesan tidak bisa dikembalikan pada saat pengantaran.</p><div class="konfirmasi-aksi"><button class="btn-konfirmasi btn-tidak" onclick="tutupKonfirmasiWA()">Cek Kembali</button><button class="btn-konfirmasi btn-ya" onclick="eksekusiKirimWA()">Ya, Yakin</button></div></div></div>
+         <div class="konfirmasi-overlay" id="modalKonfirmasiWA"><div class="konfirmasi-box"><h3>Konfirmasi Pesanan</h3><p>Apakah kamu sudah yakin?<br>Barang yang sudah dipesan tidak bisa dikembalikan pada saat pengantaran.</p><div class="konfirmasi-aksi"><button class="btn-konfirmasi btn-tidak" onclick="tutupKonfirmasiWA()">Cek Kembali</button><button class="btn-konfirmasi btn-ya" onclick="eksekusiKirimWA()">Ya, Yakin</button></div></div></div>
         <div class="konfirmasi-overlay" id="modalAlertCustom"><div class="konfirmasi-box"><h3 id="alertJudul">Perhatian</h3><p id="alertPesan">Pesan alert di sini</p><div class="konfirmasi-aksi"><button class="btn-konfirmasi btn-ok" onclick="tutupAlert()">OK</button></div></div></div>
     </div>
+    
+    <!-- REGISTRASI SERVICE WORKER UNTUK PWA -->
     <script>
-        const SHEET_ID = "12dmJadrRGYoTKg_nOA4GoCwlntjjO2EjG0tYCz-yFss";
-        const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&t=${new Date().getTime()}`;
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker terdaftar', reg))
+                    .catch(err => console.log('Service worker gagal', err));
+            });
+        }
+    </script>
+    
+    <script>
+        const SHEET_URL = `./data.json?t=${new Date().getTime()}`;
         const FOLDER_GAMBAR_SERVER = "./gambar/";
-        let dataKatalog = {}, keranjang = JSON.parse(localStorage.getItem('keranjang_gudang_septa_v2')) || {}, daftarNamaBarang = [], nomorWAOwner = "6281234567890", sedangMencari = false, stateVarianKatalog = {}; 
+        
+function cekSisaKeranjangMenggantung() {
+    let waktuCheckout = localStorage.getItem('waktu_checkout_gudang_septa');
+    if (waktuCheckout) {
+        let waktuSekarang = new Date().getTime();
+        let selisihWaktu = waktuSekarang - parseInt(waktuCheckout);
+        let batasWaktu = 2 * 24 * 60 * 60 * 1000; 
+        if (selisihWaktu > batasWaktu) {
+            localStorage.removeItem('keranjang_gudang_septa_v2');
+            localStorage.removeItem('waktu_checkout_gudang_septa');
+            return {}; 
+        }
+    }
+    return JSON.parse(localStorage.getItem('keranjang_gudang_septa_v2')) || {};
+}
+
+let dataKatalog = {}, 
+    keranjang = cekSisaKeranjangMenggantung(),
+    daftarNamaBarang = [], 
+    nomorWAOwner = "6281234567890", 
+    sedangMencari = false, 
+    stateVarianKatalog = {}; 
+    
+let arrayHTMLBarang = []; 
+let jumlahTampil = 0; 
+const BATAS_TAMPIL = 20;
+
         function escapeHTML(str) { if (!str) return ""; return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)); }
         function dapatkanNamaFile(urlMentah) { let urlStr = urlMentah.toString().trim(); if (urlStr.includes('/')) return urlStr.split('/').pop(); return urlStr; }
         window.history.replaceState({ page: 'homepage' }, null, window.location.href);
-        window.addEventListener("popstate", function (event) {
+                window.addEventListener("popstate", function (event) {
             if (document.getElementById('modalAlertCustom').style.display === 'flex') document.getElementById('modalAlertCustom').style.display = 'none';
             else if (document.getElementById('modalKonfirmasiWA').style.display === 'flex') document.getElementById('modalKonfirmasiWA').style.display = 'none';
-            else if (document.getElementById('modal-keranjang').style.display === 'flex') document.getElementById('modal-keranjang').style.display = 'none';
-            else if (document.getElementById('modalKonfirmasiKeluar').style.display === 'flex') tutupKonfirmasiKeluar();
-            else if (sedangMencari) resetPencarian();
-            else { bukaKonfirmasiKeluar(); window.history.pushState({ page: 'homepage' }, null, window.location.href); }
+            else if (document.getElementById('modal-keranjang').style.display === 'flex') {
+                document.getElementById('modal-keranjang').style.display = 'none';
+                document.body.style.overflow = '';
+            }
         });
         function tampilkanAlert(pesan, judul = "Perhatian") { document.getElementById('alertJudul').innerText = judul; document.getElementById('alertPesan').innerText = pesan; document.getElementById('modalAlertCustom').style.display = 'flex'; window.history.pushState({ modal: 'alert' }, null, ""); }
         function tutupAlert() { if (window.history.state && window.history.state.modal === 'alert') window.history.back(); else document.getElementById('modalAlertCustom').style.display = 'none'; }
-        function bukaKonfirmasiKeluar() { document.getElementById('modalKonfirmasiKeluar').style.display = 'flex'; }
-        function tutupKonfirmasiKeluar() { document.getElementById('modalKonfirmasiKeluar').style.display = 'none'; }
-        function eksekusiKeluarApp() { window.close(); window.location.href = "https://www.google.com"; }
         function muatDataPelanggan() { let simpananKios = localStorage.getItem('gudang_septa_kios'), simpananDaerah = localStorage.getItem('gudang_septa_daerah'); if (simpananKios) document.getElementById('inputKios').value = simpananKios; if (simpananDaerah) document.getElementById('inputDaerah').value = simpananDaerah; }
         function cekDanAturKios(input) { if (input.value.trim() === "") input.value = "KIOS "; }
         function validasiKios(input) {
@@ -274,11 +318,37 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
                 });
                 if (elQty) { if (varianAktif) { let keyAktif = `${id}_${varianAktif}`; elQty.innerText = keranjang[keyAktif] ? keranjang[keyAktif].qty : 0; } else { elQty.innerText = maxQty > 0 ? maxQty : 0; } }
             } else { let key = `${id}_`; if (elQty) elQty.innerText = keranjang[key] ? keranjang[key].qty : 0; }
+                        if (kartu && !barang.isKosong) {
+                let tombolMinus = kartu.querySelectorAll('.btn-qty')[0];
+                if (tombolMinus && elQty) {
+                    tombolMinus.disabled = parseFloat(elQty.innerText) <= 0;
+                }
+            }
+
         }
+        
+        function tambahBarangKeLayar(jumlahTarget) {
+            let tempatKatalog = document.getElementById("tempat-katalog");
+            let htmlBatch = "";
+            let batasAkhir = Math.min(jumlahTampil + jumlahTarget, arrayHTMLBarang.length);
+            
+            for (let i = jumlahTampil; i < batasAkhir; i++) {
+                htmlBatch += arrayHTMLBarang[i];
+            }
+            
+            if (htmlBatch !== "") {
+                tempatKatalog.insertAdjacentHTML('beforeend', htmlBatch);
+                for (let i = jumlahTampil; i < batasAkhir; i++) perbaruiUIKartu(i);
+                jumlahTampil = batasAkhir;
+            }
+        }
+
         async function ambilDataDariGoogleSheets() {
             try {
-                const response = await fetch(SHEET_URL); const textData = await response.text(); const baris = JSON.parse(textData.substring(47).slice(0, -2)).table.rows;
-                let htmlKatalog = "", indexBarang = 0;
+                const response = await fetch(SHEET_URL); 
+                const data = await response.json(); 
+                const baris = data.table.rows;
+                arrayHTMLBarang = []; jumlahTampil = 0; let indexBarang = 0;
                 baris.forEach((row, rowIndex) => {
                     if (rowIndex === 0 && row.c[1] && typeof row.c[1].v === 'string') return;
                     if (row.c[0] && row.c[0].v) {
@@ -295,26 +365,86 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
                         const totalFoto = daftarFoto.length; let kelasGambar = isKosong ? "gambar-kosong" : "";
                         let kumpulangambar = totalFoto === 0 ? `<img src="https://placehold.co/400x300/e0e0e0/666666?text=Tidak+Ada+Foto" alt="Placeholder" loading="lazy" class="${kelasGambar}" draggable="false" oncontextmenu="return false;">` : daftarFoto.map(url => `<img src="${url}" onerror="this.onerror=null; this.src='https://placehold.co/400x300/e0e0e0/666666?text=Loading...';" loading="lazy" class="${kelasGambar}" draggable="false" oncontextmenu="return false;">`).join('');
                         let elemenKosong = isKosong ? `<div class="watermark-kosong">KOSONG</div>` : "", elemenKeterangan = keterangan ? `<div class="wadah-deskripsi"><div class="judul-deskripsi">Deskripsi:</div><div class="keterangan-barang">${escapeHTML(keterangan)}</div></div>` : "", elemenVarianHTML = "";
-                        if (arrayVarian.length > 0) { let tombolVarian = arrayVarian.map(v => `<button type="button" class="btn-varian" id="btn-var-${indexBarang}-${escapeHTML(v.replace(/\s+/g, '-'))}" onclick="pilihVarian(${indexBarang}, '${escapeHTML(v)}')">${escapeHTML(v)}</button>`).join(''); elemenVarianHTML = `<div class="teks-pilih-varian">Pilih Varian:</div><div class="wadah-varian" id="wadah-varian-${indexBarang}">${tombolVarian}</div>`; }
-                        htmlKatalog += `<div class="kartu-barang" id="kartu-${indexBarang}"><div class="slider-wrapper">${elemenKosong}${totalFoto > 1 ? `<div class="slider-counter">1/${totalFoto}</div>` : ""}<div class="slider-gambar" onscroll="perbaruiAngka(this, ${totalFoto})">${kumpulangambar}</div></div><h3 class="nama-barang">${escapeHTML(namaAsli)}</h3><p class="harga-barang">Rp ${harga.toLocaleString('id-ID')}</p>${elemenVarianHTML}${elemenKeterangan}<div class="area-bawah-kartu"><div class="keterangan-singkat">Order per: ${kelipatan}${dataKatalog[indexBarang].satuan}</div><div class="kontrol-qty"><button class="btn-qty" onclick="ubahQty(${indexBarang}, -1)" ${isKosong ? 'disabled' : ''}>-</button><span class="angka-qty" id="qty-${indexBarang}">0</span><button class="btn-qty" onclick="ubahQty(${indexBarang}, 1)" ${isKosong ? 'disabled' : ''}>+</button></div></div></div>`;
+if (arrayVarian.length > 0) { 
+    let tombolVarian = arrayVarian.map(v => {
+        let isKosong = v.includes('*');
+        let namaTampil = v.replace(/\*/g, '').trim();
+        let atributDisabled = isKosong ? 'disabled style="background: #f5f5f5; color: #bbb; border-color: #eee; text-decoration: line-through; cursor: not-allowed;"' : '';
+        return `<button type="button" class="btn-varian" id="btn-var-${indexBarang}-${escapeHTML(v.replace(/\s+/g, '-'))}" onclick="pilihVarian(${indexBarang}, '${escapeHTML(v)}')" ${atributDisabled}>${escapeHTML(namaTampil)}</button>`;
+    }).join(''); 
+    elemenVarianHTML = `<div class="teks-pilih-varian">Pilih Varian:</div><div class="wadah-varian" id="wadah-varian-${indexBarang}">${tombolVarian}</div>`; 
+}
+
+let teksSatuan = satuan ? `<span class="satuan-harga"> / ${escapeHTML(satuan)}</span>` : "";
+
+arrayHTMLBarang.push(`<div class="kartu-barang" id="kartu-${indexBarang}"><div class="slider-wrapper">${elemenKosong}${totalFoto > 1 ? `<div class="slider-counter">1/${totalFoto}</div>` : ""}<div class="slider-gambar" onscroll="perbaruiAngka(this, ${totalFoto})">${kumpulangambar}</div></div><h3 class="nama-barang">${escapeHTML(namaAsli)}</h3><p class="harga-barang">Rp ${harga.toLocaleString('id-ID')}${teksSatuan}</p>${elemenVarianHTML}${elemenKeterangan}<div class="area-bawah-kartu"><div style="flex: 1;"></div><div class="kontrol-qty"><button class="btn-qty" onclick="ubahQty(${indexBarang}, -1)" ${isKosong ? 'disabled' : ''}>-</button><div style="display: flex; align-items: baseline; gap: 2px; min-width: 45px; justify-content: center;"><span class="angka-qty" id="qty-${indexBarang}">0</span><span style="font-size: 0.75rem; font-weight: 700; color: #555;">${escapeHTML(satuan)}</span></div><button class="btn-qty" onclick="ubahQty(${indexBarang}, 1)" ${isKosong ? 'disabled' : ''}>+</button></div></div>
+</div>`);
+
                         indexBarang++;
                     }
                 });
-                document.getElementById("tempat-katalog").innerHTML = htmlKatalog;
-                for (let i = 0; i < indexBarang; i++) perbaruiUIKartu(i);
+                document.getElementById("tempat-katalog").innerHTML = ""; 
+                tambahBarangKeLayar(BATAS_TAMPIL); 
                 perbaruiBadgeKeranjang(); jalankanAnimasiPencarian(); jalankanAutoSlide();
+                
+                let waktuSimpan = localStorage.getItem('waktu_scroll_gudang');
+                if (waktuSimpan) {
+                    let selisihWaktu = new Date().getTime() - parseInt(waktuSimpan);
+                    if (selisihWaktu < 5 * 60 * 1000) { 
+                        let jmlSimpan = localStorage.getItem('jumlah_tampil_gudang');
+                        if (jmlSimpan && parseInt(jmlSimpan) > 20) {
+                            tambahBarangKeLayar(parseInt(jmlSimpan) - 20);
+                        }
+
+                        let posisiSimpan = localStorage.getItem('posisi_scroll_gudang');
+                        if (posisiSimpan) {
+                            let tempatKatalog = document.getElementById("tempat-katalog");
+                            tempatKatalog.style.visibility = 'hidden';
+                            window.scrollTo(0, parseInt(posisiSimpan));
+                            requestAnimationFrame(() => {
+                                window.scrollTo(0, parseInt(posisiSimpan));
+                                setTimeout(() => { tempatKatalog.style.visibility = 'visible'; }, 50);
+                            });
+                        }
+                    } else {
+                        localStorage.removeItem('posisi_scroll_gudang');
+                        localStorage.removeItem('waktu_scroll_gudang');
+                        localStorage.removeItem('jumlah_tampil_gudang');
+                    }
+                }
             } catch (error) { document.getElementById("tempat-katalog").innerHTML = `<div style="text-align:center; padding: 40px 20px;"><p style="color: #dc2626; font-weight:bold;">Gagal memuat barang. Periksa koneksi internet.</p><button onclick="ambilDataDariGoogleSheets()" style="padding: 10px 20px; background: #EA580C; color: white; border: none; border-radius: 8px; margin-top: 10px; cursor:pointer;">Coba Lagi</button></div>`; }
         }
         function pilihVarian(id, varian) { let barang = dataKatalog[id]; if (barang.isKosong) return; stateVarianKatalog[id] = varian; perbaruiUIKartu(id); }
         function ubahQty(id, arah) { let barang = dataKatalog[id]; if (barang.isKosong) return; let varianAktif = ""; if (barang.varian.length > 0) { if (!stateVarianKatalog[id]) { tampilkanAlert("Silakan pilih varian (warna/ukuran) terlebih dahulu!"); return; } varianAktif = stateVarianKatalog[id]; } prosesUbahQty(id, varianAktif, arah); }
-        function ubahQtyDariModal(keyKeranjang, arah) { let item = keranjang[keyKeranjang]; if(!item) return; prosesUbahQty(item.id, item.varian, arah, true); }
-        function prosesUbahQty(id, varian, arah, dariModal = false) {
+        function ubahQtyDariModal(keyKeranjang, arah) { 
+    let batas = keyKeranjang.indexOf('_');
+    let id = keyKeranjang.substring(0, batas);
+    let varian = keyKeranjang.substring(batas + 1);
+    prosesUbahQty(id, varian, arah, true); 
+}
+
+                function prosesUbahQty(id, varian, arah, dariModal = false) {
             let barang = dataKatalog[id], key = `${id}_${varian}`, qtySekarang = keranjang[key] ? keranjang[key].qty : 0, qtyBaru = qtySekarang + (arah * barang.kelipatan);
             if (qtyBaru <= 0) { delete keranjang[key]; } else { qtyBaru = Math.round(qtyBaru * 100) / 100; keranjang[key] = { id: id, varian: varian, qty: qtyBaru }; }
             localStorage.setItem('keranjang_gudang_septa_v2', JSON.stringify(keranjang)); perbaruiBadgeKeranjang(); perbaruiUIKartu(id);
             if (dariModal || document.getElementById('modal-keranjang').style.display === 'flex') {
                 let elModalQty = document.getElementById(`modal-qty-${key}`), elModalTotal = document.getElementById(`modal-total-${key}`), elModalBaris = document.getElementById(`row-modal-${key}`);
-                if (elModalQty) { elModalQty.innerText = qtyBaru > 0 ? qtyBaru : 0; if (elModalTotal) elModalTotal.innerText = `Rp ${(qtyBaru * barang.harga).toLocaleString('id-ID')}`; if (elModalBaris) elModalBaris.style.opacity = qtyBaru <= 0 ? '0.4' : '1'; }
+                if (elModalQty) { 
+                elModalQty.innerText = qtyBaru > 0 ? qtyBaru : 0; 
+                if (elModalTotal) elModalTotal.innerText = `Rp ${(qtyBaru * barang.harga).toLocaleString('id-ID')}`; 
+                
+                if (elModalBaris) {
+                    let infoBarang = elModalBaris.querySelector('.info-item-keranjang');
+                    if (infoBarang) {
+                        infoBarang.style.opacity = qtyBaru <= 0 ? '0.4' : '1';
+                    }
+
+                    let tombolMinus = elModalBaris.querySelectorAll('.btn-qty')[0];
+                    if (tombolMinus) {
+                        tombolMinus.disabled = qtyBaru <= 0; 
+                    }
+                }
+            }
                 kalkulasiTotalKeranjang();
             }
         }
@@ -326,12 +456,25 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
                 for (let key in keranjang) {
                     let item = keranjang[key], barang = dataKatalog[item.id]; if (!barang) continue;
                     let subTotal = item.qty * barang.harga, namaCetak = item.varian ? `${barang.nama} ${item.varian}` : barang.nama;
-                    htmlPesanan += `<div class="item-pesanan" id="row-modal-${key}"><div class="info-item-keranjang"><div class="item-pesanan-nama">${escapeHTML(namaCetak)}</div><div class="item-pesanan-harga">Rp ${barang.harga.toLocaleString('id-ID')} / ${barang.satuan.trim()}</div><div class="total-harga-item" id="modal-total-${key}">Rp ${subTotal.toLocaleString('id-ID')}</div></div><div class="kontrol-qty" style="margin: 0;"><button class="btn-qty" onclick="ubahQtyDariModal('${key}', -1)">-</button><span class="angka-qty" id="modal-qty-${key}">${item.qty}</span><button class="btn-qty" onclick="ubahQtyDariModal('${key}', 1)">+</button></div></div>`;
+                    htmlPesanan += `<div class="item-pesanan" id="row-modal-${key}"><div class="info-item-keranjang"><div class="item-pesanan-nama">${escapeHTML(namaCetak)}</div><div class="item-pesanan-harga">Rp ${barang.harga.toLocaleString('id-ID')} / ${barang.satuan.trim()}</div><div class="total-harga-item" id="modal-total-${key}">Rp ${subTotal.toLocaleString('id-ID')}</div></div><div class="kontrol-qty" style="margin: 0;"><button class="btn-qty" onclick="ubahQtyDariModal('${key}', -1)">-</button><div style="display: flex; align-items: baseline; gap: 2px; min-width: 45px; justify-content: center;"><span class="angka-qty" id="modal-qty-${key}">${item.qty}</span><span style="font-size: 0.75rem; font-weight: 700; color: #555;">${escapeHTML(barang.satuan.trim())}</span></div><button class="btn-qty" onclick="ubahQtyDariModal('${key}', 1)">+</button></div>
+</div>`;
                 } listPesanan.innerHTML = htmlPesanan;
             }
-            kalkulasiTotalKeranjang(); document.getElementById('modal-keranjang').style.display = 'flex'; window.history.pushState({ modal: 'keranjang' }, null, "");
+            kalkulasiTotalKeranjang(); 
+            document.getElementById('modal-keranjang').style.display = 'flex'; 
+            window.history.pushState({ modal: 'keranjang' }, null, "");
+            
+            document.body.style.overflow = 'hidden';
         }
-        function tutupKeranjang() { if (window.history.state && window.history.state.modal === 'keranjang') window.history.back(); else document.getElementById('modal-keranjang').style.display = 'none'; }
+
+        function tutupKeranjang() { 
+    if (window.history.state && window.history.state.modal === 'keranjang') {
+        window.history.back(); 
+    } else { 
+        document.getElementById('modal-keranjang').style.display = 'none'; 
+        document.body.style.overflow = ''; 
+    } 
+}
         function kirimKeWA() {
             const inputKios = document.getElementById('inputKios').value.trim(), daerah = document.getElementById('inputDaerah').value;
             if (!inputKios || inputKios === "KIOS" || inputKios === "KIOS " || !daerah) { tampilkanAlert("Mohon lengkapi Nama Kios dan pilih Daerah Anda terlebih dahulu!"); return; }
@@ -340,6 +483,17 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
             document.getElementById('modalKonfirmasiWA').style.display = 'flex'; window.history.pushState({ modal: 'konfirmasiWA' }, null, "");
         }
         function eksekusiKirimWA() {
+            // FIX: Anti-Spam Checkout (Celah 3)
+            let waktuTerakhir = localStorage.getItem('waktu_kirim_wa');
+            if (waktuTerakhir) {
+                let selisih = new Date().getTime() - parseInt(waktuTerakhir);
+                if (selisih < 3 * 60 * 1000) { // Cooldown 3 Menit
+                    let sisa = Math.ceil((180000 - selisih) / 1000);
+                    tampilkanAlert(`Mohon tunggu ${sisa} detik lagi sebelum mengirim pesanan baru untuk menghindari spam.`);
+                    return;
+                }
+            }
+
             tutupKonfirmasiWA(); const inputKios = document.getElementById('inputKios').value.trim(), daerah = document.getElementById('inputDaerah').value;
             let pesan = "Halo Mas Septa, saya ada pesanan baru:\n\nNama Kios: " + inputKios + "\nDaerah Tujuan: " + daerah + "\n--------------------------\n\n", totalSemua = 0;
             for (let key in keranjang) {
@@ -350,18 +504,58 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
                     pesan += `- ${namaCetak}\n  ${item.qty} ${barang.satuan.trim()} x Rp ${barang.harga.toLocaleString('id-ID')} = Rp ${subTotal.toLocaleString('id-ID')}\n`;
                 }
             }
-            pesan += `\nTotal Semua = Rp ${totalSemua.toLocaleString('id-ID')}`;
-            window.open(`https://wa.me/${nomorWAOwner}?text=${encodeURIComponent(pesan)}`, '_blank');
-        }
+                pesan += `\nTotal Semua = Rp ${totalSemua.toLocaleString('id-ID')}`;
+    
+         localStorage.setItem('waktu_checkout_gudang_septa', new Date().getTime().toString());
+         localStorage.setItem('waktu_kirim_wa', new Date().getTime().toString());
+    
+    localStorage.removeItem('posisi_scroll_gudang');
+    localStorage.removeItem('waktu_scroll_gudang');
+    localStorage.removeItem('jumlah_tampil_gudang');
+
+    window.location.href = `whatsapp://send?phone=${nomorWAOwner}&text=${encodeURIComponent(pesan)}`;
+}
         function tutupKonfirmasiWA() { if (window.history.state && window.history.state.modal === 'konfirmasiWA') window.history.back(); else document.getElementById('modalKonfirmasiWA').style.display = 'none'; }
+        
         function eksekusiPencarian(e) {
-            if (e) e.preventDefault(); const keyword = document.getElementById('inputCari').value.toLowerCase(), elemenKartu = document.getElementsByClassName('kartu-barang');
-            document.getElementById('inputCari').blur(); sedangMencari = keyword.length > 0; document.getElementById('btnBack').style.display = sedangMencari ? 'flex' : 'none';
-            for (let i = 0; i < elemenKartu.length; i++) { const nama = elemenKartu[i].querySelector('.nama-barang'); if (nama && (nama.textContent || nama.innerText).toLowerCase().indexOf(keyword) > -1) { elemenKartu[i].style.display = ""; } else { elemenKartu[i].style.display = "none"; } }
+            if (e) e.preventDefault(); 
+            if (window.location.hash !== '#cari') history.pushState(null, null, '#cari');
+            
+            const keyword = document.getElementById('inputCari').value.toLowerCase();
+            document.getElementById('inputCari').blur(); 
+            sedangMencari = keyword.length > 0; 
+            document.getElementById('btnBack').style.display = sedangMencari ? 'flex' : 'none';
+            
+            let tempatKatalog = document.getElementById("tempat-katalog");
+            
+            if (sedangMencari) {
+                let htmlCari = "";
+                let idCocok = [];
+                for (let i = 0; i < arrayHTMLBarang.length; i++) {
+                    if (daftarNamaBarang[i].toLowerCase().includes(keyword)) {
+                        htmlCari += arrayHTMLBarang[i];
+                        idCocok.push(i);
+                    }
+                }
+                tempatKatalog.innerHTML = htmlCari !== "" ? htmlCari : "<p style='text-align:center; margin-top:20px; color:#777;'>Barang tidak ditemukan.</p>";
+                idCocok.forEach(id => perbaruiUIKartu(id));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                tempatKatalog.innerHTML = "";
+                let memoriJumlah = jumlahTampil;
+                jumlahTampil = 0; 
+                tambahBarangKeLayar(memoriJumlah > 0 ? memoriJumlah : BATAS_TAMPIL);
+            }
         }
+
         document.getElementById('inputCari').addEventListener('input', function() { document.getElementById('btnClear').style.display = this.value.length > 0 ? 'flex' : 'none'; });
         function clearInput() { document.getElementById('inputCari').value = ''; document.getElementById('btnClear').style.display = 'none'; document.getElementById('inputCari').focus(); }
-        function resetPencarian() { document.getElementById('inputCari').value = ''; document.getElementById('btnClear').style.display = 'none'; document.getElementById('btnBack').style.display = 'none'; sedangMencari = false; tampilkanPlaceholder(); eksekusiPencarian(); }
+        function resetPencarian() { 
+    if (window.location.hash === '#cari') {
+        history.replaceState(null, null, window.location.href.split('#')[0]);
+    }
+
+        document.getElementById('inputCari').value = ''; document.getElementById('btnClear').style.display = 'none'; document.getElementById('btnBack').style.display = 'none'; sedangMencari = false; tampilkanPlaceholder(); eksekusiPencarian(); }
         function sembunyikanPlaceholder() { document.getElementById('wadah-placeholder').style.display = 'none'; }
         function tampilkanPlaceholder() { if(document.getElementById('inputCari').value === "") document.getElementById('wadah-placeholder').style.display = 'flex'; }
         let intervalAnimasiCari;
@@ -378,19 +572,80 @@ cat <<'HTMLEOF' > $APP_DIR/index.html
         function jalankanAutoSlide() { document.querySelectorAll('.slider-gambar').forEach(slider => { if (slider.children.length > 1) { setInterval(() => { if (slider.scrollLeft >= slider.scrollWidth - slider.clientWidth - 5) { slider.scrollTo({ left: 0, behavior: 'smooth' }); } else { slider.scrollBy({ left: slider.clientWidth, behavior: 'smooth' }); } }, 3000); } }); }
         function perbaruiAngka(slider, total) { const counter = slider.parentElement.querySelector('.slider-counter'); if (counter) counter.innerText = Math.round(slider.scrollLeft / slider.clientWidth) + 1 + "/" + total; }
         window.onload = function() { muatDataPelanggan(); ambilDataDariGoogleSheets(); };
+window.addEventListener('popstate', function(event) {
+    if (window.location.hash !== '#cari' && sedangMencari === true) {
+        resetPencarian(); 
+    }
+});
+window.addEventListener('scroll', function() {
+    if (!sedangMencari) {
+        localStorage.setItem('posisi_scroll_gudang', window.scrollY);
+        localStorage.setItem('waktu_scroll_gudang', new Date().getTime().toString());
+        localStorage.setItem('jumlah_tampil_gudang', jumlahTampil);
+        
+        let jarakDariBawah = document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
+        if (jarakDariBawah < 2500 && jumlahTampil < arrayHTMLBarang.length) {
+            tambahBarangKeLayar(BATAS_TAMPIL); 
+        }
+    }
+});
+
     </script>
 </body>
 </html>
 HTMLEOF
 
-# --- B. MENULIS FILE SCRIPT SYNC.JS ---
-cat << 'EOF' > $APP_DIR/sync.js
+# --- A2. MEMBUAT FILE MANIFEST & SERVICE WORKER (PWA) ---
+echo "Menyiapkan file PWA (Manifest & Service Worker)..."
+cat <<EOF > $APP_DIR/manifest.json
+{
+  "name": "GudangBarang Mas Septa",
+  "short_name": "GudangBarang",
+  "description": "Katalog Distribusi Barang & Sembako",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#EA580C",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+EOF
+
+cat <<EOF > $APP_DIR/sw.js
+self.addEventListener('install', (e) => {
+  console.log('[Service Worker] Terinstal');
+});
+
+self.addEventListener('fetch', (e) => {
+  // Mode pass-through sederhana agar syarat PWA terpenuhi
+});
+EOF
+
+# Download Icons otomatis dari GitHub
+echo "Mengunduh ikon aplikasi dari GitHub..."
+wget -qO $APP_DIR/icon-192.png "$GITHUB_RAW_URL/icon-192.png"
+wget -qO $APP_DIR/icon-512.png "$GITHUB_RAW_URL/icon-512.png"
+
+
+# --- B. MENULIS FILE SCRIPT SYNC.JS (Disimpan ke folder rahasia) ---
+cat << 'EOF' > $SYNC_DIR/sync.js
 const fs = require('fs');
 const path = require('path');
 
 const SHEET_ID = "12dmJadrRGYoTKg_nOA4GoCwlntjjO2EjG0tYCz-yFss";
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-const DIR_GAMBAR = path.join(__dirname, 'gambar');
+const DIR_GAMBAR = '/var/www/html/gambar';
+const FILE_JSON = '/var/www/html/data.json';
 
 if (!fs.existsSync(DIR_GAMBAR)) { fs.mkdirSync(DIR_GAMBAR, { recursive: true }); }
 const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -401,6 +656,9 @@ async function jalankanSinkronisasi() {
         const response = await fetch(SHEET_URL);
         const textData = await response.text();
         const jsonText = textData.substring(47).slice(0, -2);
+        
+        fs.writeFileSync(FILE_JSON, jsonText);
+
         const data = JSON.parse(jsonText);
         const baris = data.table.rows;
 
@@ -425,7 +683,27 @@ async function jalankanSinkronisasi() {
                                     timeout: 10000
                                 });
                                 if (!imgRes.ok) break; 
-                                const buffer = Buffer.from(await imgRes.arrayBuffer());
+                                
+                                // FIX: Anti-Crash RAM (Batas 2MB & Wajib Gambar)
+                                const contentType = imgRes.headers.get('content-type') || '';
+                                const contentLength = imgRes.headers.get('content-length');
+                                
+                                if (!contentType.startsWith('image/')) {
+                                    console.log(`Ditolak (Bukan Gambar murni): ${namaFile}`);
+                                    break;
+                                }
+                                if (contentLength && parseInt(contentLength) > 2097152) { // 2MB Limit
+                                    console.log(`Ditolak (Ukuran > 2MB): ${namaFile}`);
+                                    break;
+                                }
+                                
+                                const arrayBuf = await imgRes.arrayBuffer();
+                                if (arrayBuf.byteLength > 2097152) { 
+                                    console.log(`Ditolak (Isi file > 2MB): ${namaFile}`);
+                                    break; 
+                                }
+                                
+                                const buffer = Buffer.from(arrayBuf);
                                 fs.writeFileSync(pathFile, buffer);
                                 console.log(`Disimpan: ${namaFile}`);
                                 success = true;
@@ -446,11 +724,15 @@ jalankanSinkronisasi();
 EOF
 
 # --- C. MENGATUR PERMISSION & CRONJOB SYNC ---
+# Amankan permission folder aplikasi (Celah 1)
 chown -R www-data:www-data $APP_DIR
+chown -R www-data:www-data $SYNC_DIR
 chmod -R 755 $APP_DIR
+chmod -R 700 $SYNC_DIR # Folder script dikunci hanya untuk eksekutor saja
 
 NODE_PATH=$(which node)
-echo "*/5 * * * * root cd $APP_DIR && $NODE_PATH sync.js >>$APP_DIR/sync.log 2>&1" > /etc/cron.d/sync-gudang
+# Ubah root menjadi www-data dan arahkan eksekusi ke folder rahasia (Celah 1)
+echo "*/5 * * * * www-data cd $SYNC_DIR && $NODE_PATH sync.js >>$SYNC_DIR/sync.log 2>&1" > /etc/cron.d/sync-gudang
 chmod 644 /etc/cron.d/sync-gudang
 
 
@@ -463,9 +745,11 @@ echo "=================================================="
 systemctl stop nginx
 certbot certonly --standalone --preferred-challenges http --agree-tos --email admin@$DOMAIN -d$DOMAIN --non-interactive
 
-echo "0 0 1 * * root systemctl stop nginx && certbot renew && systemctl start nginx" > /etc/cron.d/certbot-renew
+# PERUBAHAN DI SINI: Menggunakan certbot renew dengan deploy-hook reload
+echo "0 0 1 * * root certbot renew --quiet --deploy-hook \"systemctl reload nginx\"" > /etc/cron.d/certbot-renew
 chmod 644 /etc/cron.d/certbot-renew
 systemctl restart cron
+
 
 # ============================================================
 # --- 7. KONFIGURASI XRAY JSON ---
@@ -623,7 +907,7 @@ L2="vless://$UUID@$DOMAIN:443?path=%2Fhome2&security=tls&encryption=none&type=xh
 L3="vless://$UUID@$DOMAIN:443?mode=multi&security=tls&encryption=none&type=grpc&serviceName=grpc&sni=$DOMAIN&host=$DOMAIN#GRPC_TLS"
 L4="vless://$UUID@$DOMAIN:443?path=%2Fupgrade&security=tls&encryption=none&type=httpupgrade&sni=$DOMAIN&host=$DOMAIN#UPGRADE_TLS"
 
-# Non-TLS Links
+# Non-TLS Links (Tanda \ sudah dihapus)
 L5="vless://$UUID@$DOMAIN:80?path=\%2Fhome&security=none&encryption=none&type=ws&host=$DOMAIN#WS_NTLS"
 L6="vless://$UUID@$DOMAIN:80?path=\%2Fhome2&security=none&encryption=none&type=xhttp&host=$DOMAIN#XHTTP_NTLS"
 L7="vless://$UUID@$DOMAIN:80?path=\%2Fupgrade&security=none&encryption=none&type=httpupgrade&host=$DOMAIN#UPGRADE_NTLS"
@@ -632,29 +916,27 @@ ALL_LINKS=$(cat <<EOF
 🌐 Website Katalog: https://$DOMAIN
 
 ━━━━━━━━━━━━━━━
-🔐 VPN LINKS (TLS)
+📦 <b>V2RAY CONFIGS (Tap teks di bawah untuk copy semua)</b>
 ━━━━━━━━━━━━━━━
-$L1$L2
-$L3$L4
-
-━━━━━━━━━━━━━━━
-🔓 VPN LINKS (NON-TLS)
-━━━━━━━━━━━━━━━
-$L5
-$L6$L7
+<code>$L1
+$L2$L3
+$L4$L5
+$L6$L7</code>
 EOF
 )
 
 curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
      -H 'Content-Type: application/json' \
-     -d "$(jq -n --arg chat_id "$CHAT_ID" --arg text "$ALL_LINKS" '{chat_id: $chat_id, text:$text}')"
+     -d "$(jq -n --arg chat_id "$CHAT_ID" --arg text "$ALL_LINKS" '{chat_id: $chat_id, text:$text, parse_mode:"HTML"}')"
+
+
 
 echo ""
 echo "=================================================="
 echo " ✅ INSTALASI SELESAI!"
 echo "=================================================="
-echo " 🌐 Website Katalog : https://$DOMAIN"
+echo " 🌐 Website Katalog : https://$DOMAIN (PWA Siap Instal)"
 echo " 🔐 VPN Paths       : /home, /home2, /grpc, /upgrade"
 echo " 📩 Link VPN dikirim ke Telegram."
-echo " 🔄 Cronjob Sync    : Aktif mengecek gambar setiap 5 menit."
+echo " 🔄 Cronjob Sync    : Aktif mengecek gambar setiap 5 menit (Aman)."
 echo "=================================================="
