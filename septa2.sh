@@ -6,9 +6,9 @@
 # ============================================================
 
 # --- KONFIGURASI UTAMA ---
-DOMAIN="sheet.gudangbarang.com"
+DOMAIN="gudangbarang.com"
 # Variabel baru untuk Bypass DPI/SNI Operator (Isi dengan bug host, misal: ruangguru.com)
-BUG_SNI="sheet.gudangbarang.com" 
+BUG_SNI="gudangbarang.com" 
 UUID="07e329c4-5b6b-41da-b4aa-0c8ca3e3fbfa"
 BOT_TOKEN="7484227045:AAENQc5Dp8_Nno8Oarl79IfAZZtbg4eIQC0"
 CHAT_ID="5026145251"
